@@ -1,7 +1,6 @@
 # Lab Practice 03 - PUSH CODE
 
 ## Day 17
-> May 25th, 2026
 
 ---
 
