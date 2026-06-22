@@ -1,4 +1,5 @@
 # Linux Special Permissions and ACL Study Notes
+> Content Created by Instructor Khalid Khan
 
 ## JUNE 21ST, 2026
 ## SUID, SGID, Sticky Bit, and ACL
