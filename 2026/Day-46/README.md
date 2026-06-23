@@ -53,6 +53,11 @@ Here are questions that evaluate your capability by RHCSA Exam!
 
 Delete user **jerry** including his home directory and files. If the user is currently logged in, terminate his processes before deleting.
 
+## Task-1
+~~~bash
+useradd jerry
+~~~
+
 ### Solution
 
 ```bash
@@ -80,6 +85,11 @@ userdel -rf jerry
 
 Delete the group **developers**.
 
+## Task-2
+~~~bash
+groupadd developers
+cat /etc/groups
+~~~
 ### Solution
 
 ```bash
@@ -94,6 +104,13 @@ groupdel developers
 
 Remove a user from a supplementary group.
 
+## Task-3
+~~~bash
+useradd dev1
+groupadd gitadmin
+usermod -aG gitadmin dev1
+groups dev1
+~~~
 ### Solution
 
 ```bash
