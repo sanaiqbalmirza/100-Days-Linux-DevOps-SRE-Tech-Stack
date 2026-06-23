@@ -36,24 +36,30 @@ Here are questions that evaluate your capability by RHCSA Exam!
 6. Q17 – ACL Permissions
 7. Q18 – Sticky Bit
 8. Q19 – SGID Directory
-9. Q22 – User Creation with UID
+9. Q22 – Create User with UID
 10. Q30 – umask
 11. Q31 – Password Aging and Sudo
 12. Special Permissions Summary
 13. Symbolic Mode Examples
-14. RHCSA User Management Commands
+14. Common RHCSA Commands
 
 ---
 
 # User and Group Management
 
-## Delete User
+## Delete a User
+
+### Question
+
+Delete user **jerry** including his home directory and files. If the user is currently logged in, terminate his processes before deleting.
+
+### Solution
 
 ```bash
 userdel -r jerry
 ```
 
-If the user is logged in:
+If logged in:
 
 ```bash
 pkill -KILL -u jerry
@@ -68,7 +74,13 @@ userdel -rf jerry
 
 ---
 
-## Delete Group
+## Delete a Group
+
+### Question
+
+Delete the group **developers**.
+
+### Solution
 
 ```bash
 groupdel developers
@@ -78,6 +90,12 @@ groupdel developers
 
 ## Remove User from Group
 
+### Question
+
+Remove a user from a supplementary group.
+
+### Solution
+
 ```bash
 gpasswd -d username groupname
 ```
@@ -86,24 +104,17 @@ gpasswd -d username groupname
 
 # Q3 – ACLs and Directory Permissions
 
-## Requirements
+## Question
 
-Create:
+Create a directory `/share/dev`.
 
-```text
-/share/dev
-```
+Requirements:
 
-Ownership:
+- Ownership should be `devuser:devteam`
+- Members of `devteam` should have read, write and execute permissions.
+- User `john` should have read-only access using ACL.
 
-```text
-devuser:devteam
-```
-
-Permissions:
-
-- devteam members should have rwx.
-- user john should have read-only access via ACL.
+---
 
 ## Solution
 
@@ -137,56 +148,60 @@ other::r-x
 
 # Q4 – Users, Groups, Shells, Passwords, and Sudo
 
-## Create Group
+## Question
+
+Create:
+
+- Group `sysadm`
+- User `harry` with secondary group `sysadm`
+- User `natasha` with secondary group `sysadm`
+- User `sarah` with no interactive shell and not a member of sysadm
+- Password for all users should be `password`
+- Members of sysadm can create users without sudo password
+- User harry can reset passwords without being asked for sudo password
+
+---
+
+## Solution
+
+### Create Group
 
 ```bash
 groupadd sysadm
 ```
 
-## Create Users
+### Create Users
 
 ```bash
 useradd -G sysadm harry
 useradd -G sysadm natasha
 ```
 
-## Create User with Non-Interactive Shell
+### Create Non-interactive User
 
 ```bash
 useradd -s /sbin/nologin sarah
 ```
 
----
-
-## Set Passwords
+### Set Passwords
 
 ```bash
 echo "password" | passwd --stdin harry
-
 echo "password" | passwd --stdin natasha
-
 echo "password" | passwd --stdin sarah
 ```
 
----
-
-## Sudo Privileges
-
-Edit sudoers:
+### Configure Sudo
 
 ```bash
 visudo
 ```
 
-Allow sysadm members to create users:
+Add:
 
 ```text
 %sysadm ALL=(ALL) NOPASSWD: /usr/sbin/useradd
-```
 
-Allow harry to change passwords without entering sudo password:
-
-```text
 harry ALL=(ALL) NOPASSWD: /usr/bin/passwd [A-Za-z]*,!/usr/bin/passwd root
 ```
 
@@ -202,20 +217,18 @@ sudo passwd natasha
 
 # Q5 – SGID Collaborative Directory
 
-## Requirements
+## Question
 
-Create:
-
-```text
-/shared/sysadm
-```
+Create directory `/shared/sysadm`.
 
 Requirements:
 
-- Group owner = sysadm
-- Members have rwx
-- Others have no permissions
-- New files inherit sysadm group ownership
+- Group ownership should be sysadm
+- Members should have rwx access
+- Others should have no access
+- Newly created files should automatically inherit group sysadm ownership
+
+---
 
 ## Solution
 
@@ -235,7 +248,7 @@ Result:
 drwxrws---
 ```
 
-### Meaning
+Meaning:
 
 ```text
 2 = SGID
@@ -246,15 +259,17 @@ drwxrws---
 
 # Q14 – Secondary Group Membership
 
-Create group:
+## Question
+
+Create user `alex` and make him a secondary member of group `IT-Team`.
+
+---
+
+## Solution
 
 ```bash
 groupadd IT-Team
-```
 
-Create user:
-
-```bash
 useradd -G IT-Team alex
 ```
 
@@ -262,9 +277,7 @@ Verify:
 
 ```bash
 id alex
-
 getent group IT-Team
-
 getent passwd alex
 ```
 
@@ -280,27 +293,38 @@ groups=1017(alex),1016(IT-Team)
 
 # Q17 – ACL Permissions
 
-Copy file:
+## Question
+
+Copy `/etc/fstab` to `/var/tmp/fstab`.
+
+Requirements:
+
+- Owner should be root
+- Group should be root
+- No one should execute it
+- Natasha should have read and write access
+- Harry should have no permissions
+- Everyone else should have read access
+
+---
+
+## Solution
 
 ```bash
 cp /etc/fstab /var/tmp/
 ```
 
-Requirements:
-
-- Owner = root
-- Group = root
-- Natasha should have read/write.
-- Harry should have no permissions.
-- Others should have read permission.
-
-## Solution
+Set ACLs:
 
 ```bash
 setfacl -m u:natasha:rw- /var/tmp/fstab
 
 setfacl -m u:harry:--- /var/tmp/fstab
+```
 
+Verify:
+
+```bash
 getfacl /var/tmp/fstab
 ```
 
@@ -308,8 +332,8 @@ Expected:
 
 ```text
 user::rw-
-user:harry:---
 user:natasha:rw-
+user:harry:---
 group::r--
 mask::rw-
 other::r--
@@ -319,21 +343,16 @@ other::r--
 
 # Q18 – Sticky Bit
 
-## Requirements
+## Question
 
-Create:
+Create directory `/shared/projects`.
 
-```text
-/shared/projects
-```
+Requirements:
 
-Owner:
+- Ownership belongs to alex
+- Users should not be able to delete files belonging to other users
 
-```text
-alex
-```
-
-Prevent users from deleting each other's files.
+---
 
 ## Solution
 
@@ -351,28 +370,30 @@ Result:
 drwxrwxrwt
 ```
 
-### Meaning
+Meaning:
 
 ```text
 1 = Sticky Bit
 777 = rwxrwxrwx
 ```
 
-Only the file owner and root can delete files.
-
 ---
 
 # Q19 – SGID Directory
 
-Create:
+## Question
+
+Create `/root/d1`.
+
+Set SGID permission on the directory so that all newly created files inherit the group ownership.
+
+---
+
+## Solution
 
 ```bash
 mkdir -p /root/d1
-```
 
-Apply SGID:
-
-```bash
 chmod 2775 /root/d1
 ```
 
@@ -382,26 +403,31 @@ Result:
 drwxrwsr-x
 ```
 
-### Meaning
+Meaning:
 
 ```text
 2 = SGID
 775 = rwxrwxr-x
 ```
 
-New files inherit group ownership.
-
 ---
 
 # Q22 – Create User with Specific UID
 
+## Question
+
+Create user `unilao`:
+
+- UID should be 2334
+- Password should be `ablerate`
+
+---
+
+## Solution
+
 ```bash
 useradd -u 2334 unilao
-```
 
-Set password:
-
-```bash
 echo "ablerate" | passwd --stdin unilao
 ```
 
@@ -422,33 +448,27 @@ useradd \
 unilao
 ```
 
-Options:
-
-| Option | Description |
-|----------|-------------|
-| -u | UID |
-| -d | Home directory |
-| -s | Login shell |
-| -g | Primary group |
-| -G | Secondary groups |
-
 ---
 
 # Q30 – umask
 
-## Requirements
+## Question
 
-Files:
+Configure user `natasha` so that:
+
+Files are created as:
 
 ```text
 -r--------
 ```
 
-Directories:
+Directories are created as:
 
 ```text
 dr-x------
 ```
+
+---
 
 ## Solution
 
@@ -489,7 +509,15 @@ dr-x------
 
 ---
 
-# Q31 – Password Aging
+# Q31(a) Password Aging
+
+## Question
+
+Configure the system so that passwords for newly created users expire after 20 days.
+
+---
+
+## Solution
 
 Edit:
 
@@ -511,9 +539,17 @@ chage -l username
 
 ---
 
-# Q31 – Passwordless Sudo
+# Q31(b) Passwordless Sudo
 
-Edit:
+## Question
+
+Members of group `admin` should be able to administer the system without entering a password.
+
+---
+
+## Solution
+
+Edit sudoers:
 
 ```bash
 visudo
@@ -529,26 +565,26 @@ Add:
 
 # Special Permissions Summary
 
-| Permission | Numeric Mode | Symbolic Mode | Example |
-|------------|--------------|---------------|---------|
+| Permission | Numeric | Symbolic | Example |
+|------------|---------|----------|----------|
 | SUID | 4755 | u+s | -rwsr-xr-x |
 | SGID | 2775 | g+s | drwxrwsr-x |
 | Sticky Bit | 1777 | +t | drwxrwxrwt |
 
 ---
 
-# SUID Example
+# Symbolic Mode Examples
 
-Numeric:
-
-```bash
-chmod 4755 file
-```
-
-Symbolic:
+## SUID
 
 ```bash
 chmod u+s file
+```
+
+or
+
+```bash
+chmod 4755 file
 ```
 
 Result:
@@ -559,18 +595,16 @@ Result:
 
 ---
 
-# SGID Example
-
-Numeric:
-
-```bash
-chmod 2775 directory
-```
-
-Symbolic:
+## SGID
 
 ```bash
 chmod g+s directory
+```
+
+or
+
+```bash
+chmod 2775 directory
 ```
 
 Result:
@@ -581,18 +615,16 @@ drwxrwsr-x
 
 ---
 
-# Sticky Bit Example
-
-Numeric:
-
-```bash
-chmod 1777 directory
-```
-
-Symbolic:
+## Sticky Bit
 
 ```bash
 chmod +t directory
+```
+
+or
+
+```bash
+chmod 1777 directory
 ```
 
 Result:
@@ -603,7 +635,7 @@ drwxrwxrwt
 
 ---
 
-# Common RHCSA User Management Commands
+# Common RHCSA Commands
 
 ## User Management
 
@@ -615,12 +647,9 @@ passwd
 chpasswd
 chage
 id
-who
-whoami
 groups
+whoami
 ```
-
----
 
 ## Group Management
 
@@ -633,16 +662,12 @@ newgrp
 getent group
 ```
 
----
-
 ## Ownership
 
 ```bash
 chown
 chgrp
 ```
-
----
 
 ## Permissions
 
@@ -651,26 +676,20 @@ chmod
 umask
 ```
 
----
-
-## ACL Commands
+## ACL
 
 ```bash
 setfacl
 getfacl
 ```
 
----
-
-## Sudo Commands
+## Sudo
 
 ```bash
 visudo
 sudo
 sudo -l
 ```
-
----
 
 ## Information Commands
 
@@ -684,3 +703,38 @@ ls -ld
 
 ---
 
+# RHCSA Objectives Covered
+
+✅ User Creation
+
+✅ User Deletion
+
+✅ Group Creation
+
+✅ Group Deletion
+
+✅ Secondary Groups
+
+✅ Non-interactive Shells
+
+✅ Password Assignment
+
+✅ Password Aging
+
+✅ Passwordless Sudo
+
+✅ Ownership
+
+✅ Standard Permissions
+
+✅ ACLs
+
+✅ SGID
+
+✅ Sticky Bit
+
+✅ umask
+
+✅ Collaborative Directories
+
+✅ User and Group Verification
